@@ -12,7 +12,9 @@ class Pieces():
         self.init_y = init_y
         self.x=self.init_x
         self.y=self.init_y
-
+        
+    def getTeam(self):
+        return self.team
 class Pawn(Pieces):
     def __init__(self, team,init_x):
         image = f"./assets/pawn_{team}.png"
