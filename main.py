@@ -37,25 +37,35 @@ def getCordfromCell(cell):
 #you get the cell coordinate from click then based on the cell you setSelect the piece on the cell and you deselect the last piece using pass_selected (you store the last cell)
 #just need to add que tu peux juste selectionner les joueur de ta team
 last_cell=None
+current_team="white"
+played=False
 
 def move(event):
     global last_cell
-    cell=getCellfromCoord(event.x, event.y)
     
+    cell=getCellfromCoord(event.x, event.y)
+    if isinstance(chessboard[cell],pieces.Pieces):
+        if current_team != chessboard[cell].team:
+            print("youhou")
+            return False
     selected_piece = chessboard[last_cell] if last_cell is not None else None
     clicked_piece = chessboard[cell]
-
+    
+    # If a piece is already selected
     if selected_piece is not None:
-        # If a piece is already selected
         if isinstance(clicked_piece, pieces.Pieces):
             if isinstance(selected_piece, pieces.Pieces):
+                print(f"Selected team:{selected_piece.team} --- Clicked Team:{clicked_piece.team} ---- is targeted?? {clicked_piece.isTargeted}")
                 if selected_piece.team != clicked_piece.team and clicked_piece.isTargeted:
+                    print("wallahi")
                     # If the clicked piece belongs to the opposing team, capture it
                     clicked_piece.setDead(True)
                     selected_piece.setSelected(False)
                     chessboard[cell] = selected_piece
                     chessboard[last_cell] = None
                     removeAllTargeted()
+                    switchTeam()
+
                             
                 elif selected_piece != clicked_piece and selected_piece.team == clicked_piece.team:
                     print("same")
@@ -64,11 +74,18 @@ def move(event):
                     selected_piece.setSelected(False)
                     clicked_piece.setSelected(True)
                     last_cell = cell
+
                     
                 elif selected_piece == clicked_piece:
-                    # If the clicked piece is the same one,
+                    # If the clicked piece is the same one
                     selected_piece.setSelected(False)
+                    removeAllTargeted()
                     last_cell=None
+            
+                    
+              
+
+                    
                     
                   
         else:
@@ -76,22 +93,38 @@ def move(event):
                 chessboard[cell] = chessboard[last_cell]
                 chessboard[last_cell] = None
                 last_cell = cell
-            
+                if isinstance(selected_piece, pieces.Pawn):
+                    selected_piece.setFirstMove()
+                selected_piece.setSelected(False)
+                removeAllTargeted()
+                switchTeam()
+
     
     else:
         if isinstance(clicked_piece, pieces.Pieces):
             # Deselect the last selected piece if a new piece is clicked
-            clicked_piece.setSelected(True)
+            selected_piece=chessboard[cell]
+            selected_piece.setSelected(True)
             last_cell = cell
         
-        
     
-        
+def switchTeam():
+    global current_team
+    global last_cell
+    
+    if current_team == "white":
+        current_team = "black"
+    else:
+        current_team = "white"
+    last_cell=None
+    print(current_team)
+    set_turn(current_team)
 
 
 ##COMPLETE CETTE FUNCTION QUI CHECK SI UNE RECOMMENDATION EST VALIDE DANS LE CHESSBOARD(SI A LEXTERIEUR DU CHESSBOARD SUR UNE PIECE)
 #HAVE TO FIX
 def isMoveRecommendationValid(piece,recommendedMove,cell):
+    
     recommendation = ""
     if piece.team == "white":
         recommendation = str(int(cell) + recommendedMove)
@@ -113,39 +146,51 @@ def isMoveRecommendationValid(piece,recommendedMove,cell):
     if cord[0] < 0 or cord[0] > canvas_width or cord[1] < 0 or cord[1] > canvas_height:
         return False
 
-    # Check if there's a piece already at the target cell
-   
-            
-    elif chessboard[recommendation] is not None:
+                
+    if chessboard[recommendation]:
         if isinstance(chessboard[recommendation],pieces.Pieces):
             if chessboard[recommendation].team != piece.team:
                 chessboard[recommendation].setTargeted(True)
-        return False
+        
+                   
+            return False
+    else:
+        if isinstance(piece,pieces.Pawn):
+            if recommendedMove == -9 or recommendedMove == 11:
+                return False
     return True
 
 # COMPLETE CETTE FUNCTION QUI RETURN LES ENNEMIS (CELLS) QUI SONT TARGETTED PAR UN PION SELECTIONNER (JUST NEED TO MATCH DE CELLS)
 def isMoveValid(piece,init_cell,clicked_cell):
     validMoves=[]
-    
-    for recommendedMove in piece.getPossibleMoves():
+    for recommendedMove in piece.getAttackMoves():
             if isinstance(recommendedMove, list):
                 for sub_recommendedMove in recommendedMove:
                     if isMoveRecommendationValid(piece, sub_recommendedMove, init_cell):
                         validMoves.append(sub_recommendedMove)
                     else:
                         break
+                
             elif isMoveRecommendationValid(piece, recommendedMove,init_cell):
+                
                     validMoves.append(recommendedMove)
+       
+    if isinstance(piece, pieces.Pawn):
+        print("pawn")
+        for recommendedMove in piece.getPossibleMoves():
+            if isMoveRecommendationValid(piece, recommendedMove, init_cell):
+                validMoves.append(recommendedMove)
+            else:
+                break
+      
     for move in validMoves:
         if piece.team == "white":
-            if clicked_cell ==  str(int(init_cell) + move):
+            if clicked_cell == str(int(init_cell) + move):
                 return True
-            
-             
+
         else:
-            if clicked_cell == str(int(init_cell) -move ):
+            if clicked_cell == str(int(init_cell) - move ):
                 return True
-            
     return False                   
                     
                     
@@ -180,16 +225,28 @@ def showMoves(cell, piece):
     if isinstance(piece,pieces.Pieces):
         #remove all targeted highlight
         removeAllTargeted()
-        for recommendedMove in piece.getPossibleMoves():
+        
+        for recommendedMove in piece.getAttackMoves():
             if isinstance(recommendedMove, list):
                 for sub_recommendedMove in recommendedMove:
                     if isMoveRecommendationValid(piece, sub_recommendedMove, cell):
                         drawRecommendation(piece,cell,sub_recommendedMove)
                     else:
-                        break
+                        if not isinstance(piece,pieces.Pawn):
+                            print("true")
+                            break
+                            
+                           
+                            
             elif isMoveRecommendationValid(piece,recommendedMove,cell):
                 drawRecommendation(piece,cell,recommendedMove)
-    
+    if isinstance (piece,pieces.Pawn):
+        for recommendedMove in piece.getPossibleMoves():
+            if isMoveRecommendationValid(piece, recommendedMove, cell):
+                drawRecommendation(piece, cell, recommendedMove)
+            else:
+                break
+            
 chess_canvas.bind("<Button-1>", move)
 
 #ONLY USED TO INIT
@@ -423,7 +480,11 @@ root.mainloop()
 
 
 
-##click on a piece and click where u wanna go and mvoes the piece
+##almost works cause only thing left is cant attack
+
+#roques, echec, math
+
+#maybe afficher les pieces sur le coter quand ils meurts
 
 ##make turns and write whose turn is it
 
