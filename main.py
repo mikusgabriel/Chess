@@ -489,6 +489,4 @@ root.mainloop()
 
 #roques, echec, math, pion qui promote
 
-#maybe afficher les pieces sur le coter quand ils meurts
 
-##make turns and write whose turn is it
