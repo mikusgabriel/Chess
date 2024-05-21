@@ -45,8 +45,8 @@ def move(event):
     
     cell=getCellfromCoord(event.x, event.y)
     if isinstance(chessboard[cell],pieces.Pieces):
-        if current_team != chessboard[cell].team:
-            print("youhou")
+        if current_team != chessboard[cell].team and not chessboard[cell].isTargeted:
+            
             return False
     selected_piece = chessboard[last_cell] if last_cell is not None else None
     clicked_piece = chessboard[cell]
@@ -55,9 +55,9 @@ def move(event):
     if selected_piece is not None:
         if isinstance(clicked_piece, pieces.Pieces):
             if isinstance(selected_piece, pieces.Pieces):
-                print(f"Selected team:{selected_piece.team} --- Clicked Team:{clicked_piece.team} ---- is targeted?? {clicked_piece.isTargeted}")
+                
                 if selected_piece.team != clicked_piece.team and clicked_piece.isTargeted:
-                    print("wallahi")
+                  
                     # If the clicked piece belongs to the opposing team, capture it
                     clicked_piece.setDead(True)
                     selected_piece.setSelected(False)
@@ -68,7 +68,7 @@ def move(event):
 
                             
                 elif selected_piece != clicked_piece and selected_piece.team == clicked_piece.team:
-                    print("same")
+                   
                     # If the clicked piece belongs to the same team but is different,
                     # switch selection to the new piece
                     selected_piece.setSelected(False)
@@ -98,6 +98,7 @@ def move(event):
                 selected_piece.setSelected(False)
                 removeAllTargeted()
                 switchTeam()
+            
 
     
     else:
@@ -106,7 +107,8 @@ def move(event):
             selected_piece=chessboard[cell]
             selected_piece.setSelected(True)
             last_cell = cell
-        
+    
+    
     
 def switchTeam():
     global current_team
@@ -116,8 +118,9 @@ def switchTeam():
         current_team = "black"
     else:
         current_team = "white"
+    isKingTargeted(current_team)
     last_cell=None
-    print(current_team)
+    
     set_turn(current_team)
 
 
@@ -149,9 +152,13 @@ def isMoveRecommendationValid(piece,recommendedMove,cell):
                 
     if chessboard[recommendation]:
         if isinstance(chessboard[recommendation],pieces.Pieces):
-            if chessboard[recommendation].team != piece.team:
-                chessboard[recommendation].setTargeted(True)
-        
+            if isinstance(piece,pieces.Pawn):
+                if recommendedMove != 1 and recommendedMove != 2 :
+                    if chessboard[recommendation].team != piece.team:
+                                chessboard[recommendation].setTargeted(True)
+            else:
+                if chessboard[recommendation].team != piece.team:
+                    chessboard[recommendation].setTargeted(True)
                    
             return False
     else:
@@ -176,7 +183,7 @@ def isMoveValid(piece,init_cell,clicked_cell):
                     validMoves.append(recommendedMove)
        
     if isinstance(piece, pieces.Pawn):
-        print("pawn")
+       
         for recommendedMove in piece.getPossibleMoves():
             if isMoveRecommendationValid(piece, recommendedMove, init_cell):
                 validMoves.append(recommendedMove)
@@ -193,11 +200,6 @@ def isMoveValid(piece,init_cell,clicked_cell):
                 return True
     return False                   
                     
-                    
-                    
-def ennemiesTargeted(recommendedMoves):
-    
-    return True
 
 # HAVE TO FIX
 def drawRecommendation(piece,cell,recommendedMove):
@@ -214,13 +216,51 @@ def drawRecommendation(piece,cell,recommendedMove):
         chess_canvas.create_circle(
             target_cord[0],
             target_cord[1],
-            4, fill="blue")
+            4, fill="white")
 
 def removeAllTargeted():
     for key in chessboard:
         if isinstance(chessboard[key], pieces.Pieces) and chessboard[key].isTargeted == True:
             chessboard[key].setTargeted(False)
+            
+def isKingTargeted(team):
+    for key in chessboard.keys():
+        piece=chessboard[key]
+        if isinstance(piece,pieces.King):
+            if isCellTargeted(team,key):
+                print("king targeted")
+                setKingEchec()
+                
+#IL FAUT JUSTE FIX CA
+def isCellTargeted(team,cell):
+    # for key in chessboard.keys():
+    #     piece=chessboard[key]
+    #     if isinstance(piece,pieces.Pieces):
+    #         if piece.team != team:
+    #             for recommendedMove in piece.getAttackMoves():
+    #                     if isinstance(recommendedMove, list):
+    #                         for sub_recommendedMove in recommendedMove:
+    #                             if isMoveRecommendationValid(piece, sub_recommendedMove, cell):
+    #                                 print("yeye")
+    #                                 return True
+    #                             else:
+    #                                 if not isinstance(piece,pieces.Pawn):
+    #                                     break
+    #                     elif isMoveRecommendationValid(piece,recommendedMove,cell):
+    #                         return True
+    #     if isinstance (piece,pieces.Pawn):
+    #         for recommendedMove in piece.getPossibleMoves():
+    #             if isMoveRecommendationValid(piece, recommendedMove, cell):
+    #                 return True
+    #             else:
+    #                 break
+    # return False
+    pass
 
+def setKingEchec():
+    #check tous les moves du roi, sil ne peut pas bouger ben c math sinon il doit bouger. Faire en sorte que la seuule piece qui peut toucher cest le roi (surement dans move avec un bool echec==truue)
+    pass
+    
 def showMoves(cell, piece):
     if isinstance(piece,pieces.Pieces):
         #remove all targeted highlight
@@ -233,7 +273,7 @@ def showMoves(cell, piece):
                         drawRecommendation(piece,cell,sub_recommendedMove)
                     else:
                         if not isinstance(piece,pieces.Pawn):
-                            print("true")
+                            
                             break
                             
                            
@@ -275,7 +315,6 @@ def generate_chessboard_Hash():
 def generate_team_Hash(team):  
     team_hash= {}
     
-    ##mieux le faire jsp comment
     
     if team=="white":
     
@@ -350,30 +389,15 @@ init_chessboard(chessboard)
 
 #checks if a piece is dead and if it is puts none as a value to remove it
 def update_chessboard():
+   
     for key in chessboard.keys():
         if chessboard[key] is not None:
             if chessboard[key].isDead == True:
                 chessboard[key]=None
-                
+           
+                      
             
-    # for piece in white_pieces_hash:
-    #     if isinstance(piece, list):
-    #         for sub_piece in piece:
-    #             chessboard[str(sub_piece.init_x) +
-    #                             str(sub_piece.init_y)] = sub_piece
-    #     else:
-    #         if white_pieces_hash[piece]!=None:
-    #             chessboard[str(piece.init_x) + str(piece.init_y)] = piece
-            
-               
-    # for piece in black_pieces_hash:
-    #     if isinstance(piece, list):
-    #         for sub_piece in piece:
-    #             chessboard[str(sub_piece.init_x) +
-    #                             str(sub_piece.init_y)] = sub_piece
-    #     else:
-    #         if black_pieces_hash[piece] != None:
-    #             chessboard[str(piece.init_x) + str(piece.init_y)] = piece
+  
 
 ##game loop recursive
 def update():
@@ -417,8 +441,9 @@ def update_board_ui():
                         showMoves(cell,piece)
                         
                     if piece.isTargeted == True:
-                        color = "#FF7F7F"
-                        chess_canvas.create_square(x, y, color)
+                      
+                            color = "#FF7F7F"
+                            chess_canvas.create_square(x, y, color)
         
           
             # Draw the pieces
@@ -442,29 +467,10 @@ def update_board_ui():
             text=str(8 - i), font=("BOLD", 12))
 
 win=False
-def set_win():
-    global win
-    global text
-    text= "game won"
-    win_label.config(text=text)
 
 def set_turn(value):
-    turn_label.config(text=value)
+    turn_label.config(text=f"{value}'s turn")
     
-
-##quand une piece mange un autre
-spawn_window_button = Button(button_label,
-                             text="Delete",
-                             command=lambda: removepiece(chessboard["31"])).grid(column=0, row=0)
-
-##Quand le roi est math 
-spawn_window_button_win = Button(button_label,
-                             text="Win",
-                             command=lambda: set_win()).grid(column=1, row=0)
-
-
-win_label= Label(button_label,text="Playing")
-win_label.grid(column=2, row=0)
 
 turn = 0
 turn_label = Label(button_label, text="Turn")
@@ -480,12 +486,9 @@ root.mainloop()
 
 
 
-##almost works cause only thing left is cant attack
 
-#roques, echec, math
+#roques, echec, math, pion qui promote
 
 #maybe afficher les pieces sur le coter quand ils meurts
 
 ##make turns and write whose turn is it
-
-
