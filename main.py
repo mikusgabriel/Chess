@@ -489,4 +489,4 @@ root.mainloop()
 
 #roques, echec, math, pion qui promote
 
-
+#at the end, landing page, end page.
