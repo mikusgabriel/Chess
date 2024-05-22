@@ -1,1 +1,2 @@
-# Chess_AI
+# Chess
+ made in python
