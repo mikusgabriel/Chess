@@ -119,6 +119,7 @@ def switchTeam():
     else:
         current_team = "white"
     isKingTargeted(current_team)
+    removeAllTargeted()
     last_cell=None
     
     set_turn(current_team)
@@ -156,9 +157,11 @@ def isMoveRecommendationValid(piece,recommendedMove,cell):
                 if recommendedMove != 1 and recommendedMove != 2 :
                     if chessboard[recommendation].team != piece.team:
                                 chessboard[recommendation].setTargeted(True)
+                                return True
             else:
                 if chessboard[recommendation].team != piece.team:
                     chessboard[recommendation].setTargeted(True)
+                    return True
                    
             return False
     else:
@@ -167,7 +170,7 @@ def isMoveRecommendationValid(piece,recommendedMove,cell):
                 return False
     return True
 
-# COMPLETE CETTE FUNCTION QUI RETURN LES ENNEMIS (CELLS) QUI SONT TARGETTED PAR UN PION SELECTIONNER (JUST NEED TO MATCH DE CELLS)
+
 def isMoveValid(piece,init_cell,clicked_cell):
     validMoves=[]
     for recommendedMove in piece.getAttackMoves():
@@ -224,41 +227,29 @@ def removeAllTargeted():
             chessboard[key].setTargeted(False)
             
 def isKingTargeted(team):
-    for key in chessboard.keys():
-        piece=chessboard[key]
-        if isinstance(piece,pieces.King):
-            if isCellTargeted(team,key):
-                print("king targeted")
+    for cell in chessboard.keys():
+        piece=chessboard[cell]
+        if isinstance(piece,pieces.King) and piece.team==team:  
+            if isCellTargeted(team,cell):
                 setKingEchec()
-                
+    
+                    
 #IL FAUT JUSTE FIX CA
 def isCellTargeted(team,cell):
-    # for key in chessboard.keys():
-    #     piece=chessboard[key]
-    #     if isinstance(piece,pieces.Pieces):
-    #         if piece.team != team:
-    #             for recommendedMove in piece.getAttackMoves():
-    #                     if isinstance(recommendedMove, list):
-    #                         for sub_recommendedMove in recommendedMove:
-    #                             if isMoveRecommendationValid(piece, sub_recommendedMove, cell):
-    #                                 print("yeye")
-    #                                 return True
-    #                             else:
-    #                                 if not isinstance(piece,pieces.Pawn):
-    #                                     break
-    #                     elif isMoveRecommendationValid(piece,recommendedMove,cell):
-    #                         return True
-    #     if isinstance (piece,pieces.Pawn):
-    #         for recommendedMove in piece.getPossibleMoves():
-    #             if isMoveRecommendationValid(piece, recommendedMove, cell):
-    #                 return True
-    #             else:
-    #                 break
-    # return False
-    pass
+    print(f"team:{team},cell:{cell}")
+    for key in chessboard.keys():
+        piece=chessboard[key]
+        if isinstance(piece,pieces.Pieces):
+            if piece.team != team:
+                print(piece,key,cell)
+                if isMoveValid(piece,key,cell):
+                   
+                    return True
+    return False
+    
 
 def setKingEchec():
-    #check tous les moves du roi, sil ne peut pas bouger ben c math sinon il doit bouger. Faire en sorte que la seuule piece qui peut toucher cest le roi (surement dans move avec un bool echec==truue)
+    print("king")
     pass
     
 def showMoves(cell, piece):
