@@ -125,8 +125,7 @@ def switchTeam():
     set_turn(current_team)
 
 
-##COMPLETE CETTE FUNCTION QUI CHECK SI UNE RECOMMENDATION EST VALIDE DANS LE CHESSBOARD(SI A LEXTERIEUR DU CHESSBOARD SUR UNE PIECE)
-#HAVE TO FIX
+
 def isMoveRecommendationValid(piece,recommendedMove,cell):
     
     recommendation = ""
@@ -204,7 +203,7 @@ def isMoveValid(piece,init_cell,clicked_cell):
     return False                   
                     
 
-# HAVE TO FIX
+
 def drawRecommendation(piece,cell,recommendedMove):
     if piece.team == "white":
         target_cell = int(cell) + recommendedMove
@@ -231,27 +230,55 @@ def isKingTargeted(team):
         piece=chessboard[cell]
         if isinstance(piece,pieces.King) and piece.team==team:  
             if isCellTargeted(team,cell):
-                setKingEchec()
+                setKingEchec(piece)
     
                     
 #IL FAUT JUSTE FIX CA
 def isCellTargeted(team,cell):
-    print(f"team:{team},cell:{cell}")
     for key in chessboard.keys():
         piece=chessboard[key]
         if isinstance(piece,pieces.Pieces):
             if piece.team != team:
-                print(piece,key,cell)
                 if isMoveValid(piece,key,cell):
-                   
                     return True
     return False
     
-
-def setKingEchec():
-    print("king")
-    pass
+#math doent work
+def setKingEchec(king):
     
+    for move in king.getAttackMoves():
+        if isMoveRecommendationValid(king, move, getPiecePosition(king)) and isCellTargeted(king.team,getPositionAfterMove(king,move)):
+            print(getPositionAfterMove(king,move))
+            
+            print(isCellTargeted(king.team,getPositionAfterMove(king,move)))
+            return False
+        
+    
+    gameOver()
+
+def checkMath():
+    new_chessboard= chessboard
+    
+def getPiecePosition(piece):
+    for key in chessboard.keys():
+        if chessboard[key] == piece:
+            return key
+        
+def gameOver():
+    print("gameover")
+    pass
+
+def getPositionAfterMove(piece,move):
+    init_cell=int(getPiecePosition(piece))
+    print(init_cell)
+    if piece.team == "white":
+        return init_cell + move
+    else:
+        return init_cell - move
+    
+        
+    
+       
 def showMoves(cell, piece):
     if isinstance(piece,pieces.Pieces):
         #remove all targeted highlight
