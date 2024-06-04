@@ -138,10 +138,10 @@ def isMoveRecommendationValid(piece,recommendedMove,cell):
 
     # Get the coordinates of the target cell
     cord = getCordfromCell(recommendation)
-
     # Get the canvas dimensions
     canvas_width = chess_canvas.winfo_width()
     canvas_height = chess_canvas.winfo_height()
+   
     
    
 
@@ -149,7 +149,7 @@ def isMoveRecommendationValid(piece,recommendedMove,cell):
     if cord[0] < 0 or cord[0] > canvas_width or cord[1] < 0 or cord[1] > canvas_height:
         return False
 
-                
+      #I THINK THE PROBLEM LIES HERE....          
     if chessboard[recommendation]:
         if isinstance(chessboard[recommendation],pieces.Pieces):
             if isinstance(piece,pieces.Pawn):
@@ -230,7 +230,7 @@ def isKingTargeted(team):
         piece=chessboard[cell]
         if isinstance(piece,pieces.King) and piece.team==team:  
             if isCellTargeted(team,cell):
-                setKingEchec(piece)
+                setKingEchec(team,piece)
     
                     
 #IL FAUT JUSTE FIX CA
@@ -244,13 +244,14 @@ def isCellTargeted(team,cell):
     return False
     
 #math doent work
-def setKingEchec(king):
+def setKingEchec(team,king):
     
     for move in king.getAttackMoves():
-        if isMoveRecommendationValid(king, move, getPiecePosition(king)) and isCellTargeted(king.team,getPositionAfterMove(king,move)):
-            print(getPositionAfterMove(king,move))
-            
-            print(isCellTargeted(king.team,getPositionAfterMove(king,move)))
+        # print(move)
+        # print(isMoveValid(king, move, getPiecePosition(king)))
+        #print(isCellTargeted(king.team, getPositionAfterMove(king, move)))
+        if isMoveValid(king, move, getPiecePosition(king)) and isCellTargeted(team,getPositionAfterMove(king,move)):
+         
             return False
         
     
@@ -269,8 +270,8 @@ def gameOver():
     pass
 
 def getPositionAfterMove(piece,move):
+    move=int(move)
     init_cell=int(getPiecePosition(piece))
-    print(init_cell)
     if piece.team == "white":
         return init_cell + move
     else:
@@ -508,3 +509,5 @@ root.mainloop()
 #roques, echec, math, pion qui promote
 
 #at the end, landing page, end page.
+
+#BIG PROBLEM CANT  GO LEFT COLUMN AND ALSO MOVE RECOMMANDATION FUCK SELECTED FUCKED. I THINK ITS MOVERECOMMENDATION VALID THAT DOESNT WORK... CAUSE ECHEC ALSO DOESNT WORK
