@@ -548,6 +548,6 @@ root.mainloop()
 
 
 
-#roques, echec, math, en passant, pion qui promote
+#roques, echec, math, en passant
 
 #at the end, landing page, end page.
