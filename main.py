@@ -159,11 +159,11 @@ def isMoveRecommendationValid(piece,recommendedMove,cell):
                 if recommendedMove != 1 and recommendedMove != 2 :
                     if chessboard[recommendation].team != piece.team:
                                 chessboard[recommendation].setTargeted(True)
-                                return True
+                                return chessboard[recommendation]
             else:
                 if chessboard[recommendation].team != piece.team:
                     chessboard[recommendation].setTargeted(True)
-                    return True
+                    return chessboard[recommendation]
                    
             return False
     else:
@@ -178,11 +178,15 @@ def isMoveValid(piece,init_cell,clicked_cell):
     for recommendedMove in piece.getAttackMoves():
             if isinstance(recommendedMove, list):
                 for sub_recommendedMove in recommendedMove:
-                    if isMoveRecommendationValid(piece, sub_recommendedMove, init_cell):
-                        
+                    if isMoveRecommendationValid(piece, sub_recommendedMove, init_cell) is True:
                         validMoves.append(sub_recommendedMove)
-                    else:
                         
+                            
+                    #si une piece est retournee then la liste de recommandation break
+                    elif isinstance(isMoveRecommendationValid(piece, sub_recommendedMove, init_cell),pieces.Pieces):
+                        validMoves.append(sub_recommendedMove)
+                        break
+                    else:
                         break
                 
             elif isMoveRecommendationValid(piece, recommendedMove,init_cell):
@@ -288,8 +292,13 @@ def showMoves(cell, piece):
         for recommendedMove in piece.getAttackMoves():
             if isinstance(recommendedMove, list):
                 for sub_recommendedMove in recommendedMove:
-                    if isMoveRecommendationValid(piece, sub_recommendedMove, cell):
+                    if isMoveRecommendationValid(piece, sub_recommendedMove, cell) is True:
                         drawRecommendation(piece,cell,sub_recommendedMove)
+                        
+                    #si une piece est retournee then la liste de recommandation break
+                    elif isinstance(isMoveRecommendationValid(piece, sub_recommendedMove, cell),pieces.Pieces):
+                        drawRecommendation(piece,cell,sub_recommendedMove)
+                        break
                     else:
                         if not isinstance(piece,pieces.Pawn):
                             
@@ -522,4 +531,4 @@ root.mainloop()
 
 #at the end, landing page, end page.
 
-#BIG PROBLEM CANT  GO LEFT COLUMN AND basically on dessine les pieces meme apres la premiere targeted yk
+#basically on dessine les pieces meme apres la premiere targeted yk
