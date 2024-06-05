@@ -61,7 +61,13 @@ def move(event):
                     # If the clicked piece belongs to the opposing team, capture it
                     clicked_piece.setDead(True)
                     previous_piece.setSelected(False)
-                    chessboard[cell] = previous_piece
+                    
+                    #queen when pawn promotes
+                    if isinstance(previous_piece,pieces.Pawn) and isLastRow(cell,previous_piece.team):
+                        chessboard[cell] = pieces.Queen(previous_piece.team, cell[0],cell[1])
+                    else:    
+                        chessboard[cell] = previous_piece
+                        
                     chessboard[last_cell] = None
                     removeAllTargeted()
                     switchTeam()
@@ -89,8 +95,15 @@ def move(event):
                     
                   
         else:
-            if isMoveValid(chessboard[last_cell],last_cell,cell):
-                chessboard[cell] = previous_piece
+            if isMoveValid(previous_piece,last_cell,cell):
+                
+                 #queen when pawn promotes
+                if isinstance(previous_piece,pieces.Pawn) and isLastRow(cell,previous_piece.team):
+                    print("queeen")
+                    chessboard[cell] = pieces.Queen(previous_piece.team, cell[0],cell[1])
+                else:    
+                    chessboard[cell] = previous_piece
+                    
                 chessboard[last_cell] = None
                 last_cell = cell
                 if isinstance(previous_piece, pieces.Pawn):
@@ -108,6 +121,14 @@ def move(event):
             previous_piece.setSelected(True)
             last_cell = cell
     
+def isLastRow(cell,team):
+    if team=="white":
+        if cell[1]=="7":
+            return True
+    else:
+        if cell[1]=="0":
+            return True
+    return False        
     
     
 def switchTeam():
@@ -318,10 +339,10 @@ def showMoves(cell, piece):
 chess_canvas.bind("<Button-1>", move)
 
 #ONLY USED TO INIT
-white_pieces_list = [[ pieces.Pawn("white",i) for i in range(0,8)],pieces.Rook("white",0),pieces.Rook("white",7),pieces.Bishop("white",2),pieces.Bishop("white",5),pieces.Knight("white",1),pieces.Knight("white",6),pieces.King("white",4),pieces.Queen("white",3)]
+white_pieces_list = [[ pieces.Pawn("white",i) for i in range(0,8)],pieces.Rook("white",0),pieces.Rook("white",7),pieces.Bishop("white",2),pieces.Bishop("white",5),pieces.Knight("white",1),pieces.Knight("white",6),pieces.King("white",4),pieces.Queen("white",3,0)]
 white_deadpieces_list = []
 black_pieces_list = [[pieces.Pawn("black", i) for i in range(0, 8)], pieces.Rook("black", 0), pieces.Rook("black", 7), pieces.Bishop(
-    "black", 2), pieces.Bishop("black", 5), pieces.Knight("black", 1), pieces.Knight("black", 6), pieces.King("black", 4), pieces.Queen("black", 3)]
+    "black", 2), pieces.Bishop("black", 5), pieces.Knight("black", 1), pieces.Knight("black", 6), pieces.King("black", 4), pieces.Queen("black", 3,7)]
 black_deadpieces_list = []
 
 
@@ -527,8 +548,6 @@ root.mainloop()
 
 
 
-#roques, echec, math, pion qui promote
+#roques, echec, math, en passant, pion qui promote
 
 #at the end, landing page, end page.
-
-#basically on dessine les pieces meme apres la premiere targeted yk

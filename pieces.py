@@ -85,10 +85,9 @@ class Rook(Pieces):
        
 
 class Queen(Pieces):
-    def __init__(self, team,init_x):
+    def __init__(self, team,init_x,init_y):
         image = f"./assets/queen_{team}.png"
-        init_x = 3
-        init_y = {"white": 0, "black": 7}[team]
+        
         #en rajouter
         self.possibleAttack_Moves = [[11, 22, 33, 44, 55, 66, 77], [-11, -22, -33, -44, -55, -66,
                               -77], [-9, -18, -27, -36, -45, -54, -63], [9, 18, 27, 36, 45, 54, 63], [1, 2, 3, 4, 5, 6, 7], [-1, -2, -3, -4, -5, -6, -7], [10, 20, 30, 40, 50, 60, 70], [-10, -20, -30, -40, -50, -60, -70]]
