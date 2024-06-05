@@ -44,41 +44,41 @@ def move(event):
     global last_cell
     
     cell=getCellfromCoord(event.x, event.y)
+    print(cell)
     if isinstance(chessboard[cell],pieces.Pieces):
         if current_team != chessboard[cell].team and not chessboard[cell].isTargeted:
-            
             return False
-    selected_piece = chessboard[last_cell] if last_cell is not None else None
+    previous_piece = chessboard[last_cell] if last_cell is not None else None
     clicked_piece = chessboard[cell]
     
     # If a piece is already selected
-    if selected_piece is not None:
+    if previous_piece is not None:
         if isinstance(clicked_piece, pieces.Pieces):
-            if isinstance(selected_piece, pieces.Pieces):
+            if isinstance(previous_piece, pieces.Pieces):
                 
-                if selected_piece.team != clicked_piece.team and clicked_piece.isTargeted:
+                if previous_piece.team != clicked_piece.team and clicked_piece.isTargeted:
                   
                     # If the clicked piece belongs to the opposing team, capture it
                     clicked_piece.setDead(True)
-                    selected_piece.setSelected(False)
-                    chessboard[cell] = selected_piece
+                    previous_piece.setSelected(False)
+                    chessboard[cell] = previous_piece
                     chessboard[last_cell] = None
                     removeAllTargeted()
                     switchTeam()
 
                             
-                elif selected_piece != clicked_piece and selected_piece.team == clicked_piece.team:
+                elif previous_piece != clicked_piece and previous_piece.team == clicked_piece.team:
                    
                     # If the clicked piece belongs to the same team but is different,
                     # switch selection to the new piece
-                    selected_piece.setSelected(False)
+                    previous_piece.setSelected(False)
                     clicked_piece.setSelected(True)
                     last_cell = cell
 
                     
-                elif selected_piece == clicked_piece:
+                elif previous_piece == clicked_piece:
                     # If the clicked piece is the same one
-                    selected_piece.setSelected(False)
+                    previous_piece.setSelected(False)
                     removeAllTargeted()
                     last_cell=None
             
@@ -90,12 +90,12 @@ def move(event):
                   
         else:
             if isMoveValid(chessboard[last_cell],last_cell,cell):
-                chessboard[cell] = chessboard[last_cell]
+                chessboard[cell] = previous_piece
                 chessboard[last_cell] = None
                 last_cell = cell
-                if isinstance(selected_piece, pieces.Pawn):
-                    selected_piece.setFirstMove()
-                selected_piece.setSelected(False)
+                if isinstance(previous_piece, pieces.Pawn):
+                    previous_piece.setFirstMove()
+                previous_piece.setSelected(False)
                 removeAllTargeted()
                 switchTeam()
             
@@ -104,8 +104,8 @@ def move(event):
     else:
         if isinstance(clicked_piece, pieces.Pieces):
             # Deselect the last selected piece if a new piece is clicked
-            selected_piece=chessboard[cell]
-            selected_piece.setSelected(True)
+            previous_piece=chessboard[cell]
+            previous_piece.setSelected(True)
             last_cell = cell
     
     
@@ -124,17 +124,20 @@ def switchTeam():
     
     set_turn(current_team)
 
-
-
-def isMoveRecommendationValid(piece,recommendedMove,cell):
-    
-    recommendation = ""
-    if piece.team == "white":
+def getRecommandation(cell,recommendedMove,team):
+    recommendation=""
+    if team == "white":
         recommendation = str(int(cell) + recommendedMove)
     else:
         recommendation = str(int(cell) - recommendedMove)
     if len(recommendation) < 2:
         recommendation = f"0{recommendation}"
+    return recommendation
+
+
+def isMoveRecommendationValid(piece,recommendedMove,cell):
+    recommendation = getRecommandation(cell,recommendedMove,piece.team)
+    
 
     # Get the coordinates of the target cell
     cord = getCordfromCell(recommendation)
@@ -176,8 +179,10 @@ def isMoveValid(piece,init_cell,clicked_cell):
             if isinstance(recommendedMove, list):
                 for sub_recommendedMove in recommendedMove:
                     if isMoveRecommendationValid(piece, sub_recommendedMove, init_cell):
+                        
                         validMoves.append(sub_recommendedMove)
                     else:
+                        
                         break
                 
             elif isMoveRecommendationValid(piece, recommendedMove,init_cell):
@@ -193,13 +198,9 @@ def isMoveValid(piece,init_cell,clicked_cell):
                 break
       
     for move in validMoves:
-        if piece.team == "white":
-            if clicked_cell == str(int(init_cell) + move):
-                return True
-
-        else:
-            if clicked_cell == str(int(init_cell) - move ):
-                return True
+        if clicked_cell== getRecommandation(init_cell,move,piece.team):
+            return True
+    
     return False                   
                     
 
@@ -230,7 +231,7 @@ def isKingTargeted(team):
         piece=chessboard[cell]
         if isinstance(piece,pieces.King) and piece.team==team:  
             if isCellTargeted(team,cell):
-                setKingEchec(team,piece)
+                setKingEchec(piece)
     
                     
 #IL FAUT JUSTE FIX CA
@@ -244,17 +245,16 @@ def isCellTargeted(team,cell):
     return False
     
 #math doent work
-def setKingEchec(team,king):
-    
+def setKingEchec(king):
+
     for move in king.getAttackMoves():
-        # print(move)
-        # print(isMoveValid(king, move, getPiecePosition(king)))
-        #print(isCellTargeted(king.team, getPositionAfterMove(king, move)))
-        if isMoveValid(king, move, getPiecePosition(king)) and isCellTargeted(team,getPositionAfterMove(king,move)):
-         
+        if isMoveRecommendationValid(king, move, getPiecePosition(king)) and isCellTargeted(king.team,getPositionAfterMove(king,move)):
+            print(getPositionAfterMove(king,move))
+
+            print(isCellTargeted(king.team,getPositionAfterMove(king,move)))
             return False
-        
-    
+
+
     gameOver()
 
 def checkMath():
@@ -442,11 +442,22 @@ cell_size = 70
 def update_board_ui():
     chess_canvas.delete("all")
     cell_size = 70  # Adjust this value as needed
+    
+     # Draw the cells
     for x in range(8):
         for y in range(8):
             color = "#C19A6B" if (x + y) % 2 == 0 else "#342214"
             chess_canvas.create_square(x, y, color)
-    # Draw the cells
+     # Draw the moves
+    for x in range(8):
+        for y in range(8):
+            piece = chessboard[str(x) + str(7-y)]
+            cell = str(x) + str(7-y)
+            if isinstance(piece,pieces.Pieces):
+                if piece is not None:
+                    if piece.isSelected == True:
+                        showMoves(cell,piece)
+    # Draw the pieces
     for x in range(8):
         for y in range(8):
             piece = chessboard[str(x) + str(7-y)]
@@ -457,7 +468,7 @@ def update_board_ui():
                     if piece.isSelected == True:
                         color = "#FFFF00"
                         chess_canvas.create_square(x, y, color)
-                        showMoves(cell,piece)
+                       
                         
                     if piece.isTargeted == True:
                       
@@ -472,6 +483,7 @@ def update_board_ui():
                 chess_canvas.create_image(
                     x * cell_size + cell_size // 2, y * cell_size + cell_size // 2,
                     image=image)
+                
     
     # Column labels
     for i, letter in enumerate("ABCDEFGH"):
@@ -510,4 +522,4 @@ root.mainloop()
 
 #at the end, landing page, end page.
 
-#BIG PROBLEM CANT  GO LEFT COLUMN AND ALSO MOVE RECOMMANDATION FUCK SELECTED FUCKED. I THINK ITS MOVERECOMMENDATION VALID THAT DOESNT WORK... CAUSE ECHEC ALSO DOESNT WORK
+#BIG PROBLEM CANT  GO LEFT COLUMN AND basically on dessine les pieces meme apres la premiere targeted yk
