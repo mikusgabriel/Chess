@@ -5,9 +5,11 @@ import numpy as np
 
 
 
-root = Tk()
+root = Tk(className="Chess")
+
 
 frm = Frame(root, padx=100, pady=100)
+
 frm.grid()
 button_label = Label(frm, padx=10, pady=10)
 button_label.grid(row=1)
@@ -44,7 +46,7 @@ def move(event):
     global last_cell
     
     cell=getCellfromCoord(event.x, event.y)
-    print(cell)
+    
     if isinstance(chessboard[cell],pieces.Pieces):
         if current_team != chessboard[cell].team and not chessboard[cell].isTargeted:
             return False
@@ -95,11 +97,14 @@ def move(event):
                     
                   
         else:
-            if isMoveValid(previous_piece,last_cell,cell):
-                
-                 #queen when pawn promotes
+            if isMoveValid(previous_piece,last_cell,cell,False):
+                if isinstance(previous_piece,pieces.King):
+                   if isCellTargeted(previous_piece.team,getPositionAfterMove(previous_piece,cell),False):
+                       return False
+                 
+                #queen when pawn promotes
                 if isinstance(previous_piece,pieces.Pawn) and isLastRow(cell,previous_piece.team):
-                    print("queeen")
+                
                     chessboard[cell] = pieces.Queen(previous_piece.team, cell[0],cell[1])
                 else:    
                     chessboard[cell] = previous_piece
@@ -172,8 +177,7 @@ def isMoveRecommendationValid(piece,recommendedMove,cell):
     # Check if the target cell coordinates are within the canvas bounds
     if cord[0] < 0 or cord[0] > canvas_width or cord[1] < 0 or cord[1] > canvas_height:
         return False
-
-      #I THINK THE PROBLEM LIES HERE....          
+       
     if chessboard[recommendation]:
         if isinstance(chessboard[recommendation],pieces.Pieces):
             if isinstance(piece,pieces.Pawn):
@@ -186,7 +190,7 @@ def isMoveRecommendationValid(piece,recommendedMove,cell):
                     chessboard[recommendation].setTargeted(True)
                     return chessboard[recommendation]
                    
-            return False
+            return chessboard[recommendation]
     else:
         if isinstance(piece,pieces.Pawn):
             if recommendedMove == -9 or recommendedMove == 11:
@@ -194,8 +198,11 @@ def isMoveRecommendationValid(piece,recommendedMove,cell):
     return True
 
 
-def isMoveValid(piece,init_cell,clicked_cell):
+def isMoveValid(piece,init_cell,clicked_cell,isProtecting):
+    if str(init_cell)==str(clicked_cell):
+        return False
     validMoves=[]
+    piecesProtected=[]
     for recommendedMove in piece.getAttackMoves():
             if isinstance(recommendedMove, list):
                 for sub_recommendedMove in recommendedMove:
@@ -205,15 +212,22 @@ def isMoveValid(piece,init_cell,clicked_cell):
                             
                     #si une piece est retournee then la liste de recommandation break
                     elif isinstance(isMoveRecommendationValid(piece, sub_recommendedMove, init_cell),pieces.Pieces):
-                        validMoves.append(sub_recommendedMove)
+                        if piece.team!=isMoveRecommendationValid(piece, sub_recommendedMove, init_cell).team:
+                            validMoves.append(sub_recommendedMove)
+                        elif isProtecting:
+                            piecesProtected.append(sub_recommendedMove)                            
                         break
                     else:
                         break
                 
-            elif isMoveRecommendationValid(piece, recommendedMove,init_cell):
-                
+            elif isMoveRecommendationValid(piece, recommendedMove,init_cell) is True:
                     validMoves.append(recommendedMove)
-       
+            elif isinstance(isMoveRecommendationValid(piece, recommendedMove, init_cell),pieces.Pieces):
+                        if piece.team!=isMoveRecommendationValid(piece, recommendedMove, init_cell).team:
+                            validMoves.append(recommendedMove)
+                        
+                        elif isProtecting:
+                            piecesProtected.append(recommendedMove)      
     if isinstance(piece, pieces.Pawn):
        
         for recommendedMove in piece.getPossibleMoves():
@@ -221,11 +235,16 @@ def isMoveValid(piece,init_cell,clicked_cell):
                 validMoves.append(recommendedMove)
             else:
                 break
-      
-    for move in validMoves:
-        if clicked_cell== getRecommandation(init_cell,move,piece.team):
-            return True
-    
+    if not isProtecting:  
+        for move in validMoves:
+            print(str(clicked_cell),getRecommandation(init_cell,move,piece.team))
+            if str(clicked_cell)== getRecommandation(init_cell,move,piece.team):
+                return True
+    else:
+        for move in  piecesProtected: 
+            if  str(clicked_cell) == getRecommandation(init_cell,move,piece.team):
+                
+                return True
     return False                   
                     
 
@@ -255,35 +274,82 @@ def isKingTargeted(team):
     for cell in chessboard.keys():
         piece=chessboard[cell]
         if isinstance(piece,pieces.King) and piece.team==team:  
-            if isCellTargeted(team,cell):
-                setKingEchec(piece)
-    
+            if isCellTargeted(team,cell,False):
+                if setKingEchec(piece):
+                    gameOver()
+
+def isPieceTargeted(piece,team):
+    if  isCellTargeted(team,getPiecePosition(piece),False):
+        return True   
                     
 #IL FAUT JUSTE FIX CA
-def isCellTargeted(team,cell):
+def isCellTargeted(team,cell,isCheckingProtected):
     for key in chessboard.keys():
         piece=chessboard[key]
         if isinstance(piece,pieces.Pieces):
+           
             if piece.team != team:
-                if isMoveValid(piece,key,cell):
-                    return True
+                
+                if isCheckingProtected:
+                    if isMoveValid(piece,key,cell,True):
+                        return piece
+                else:
+                    if isMoveValid(piece,key,cell,False):
+                        return piece
+                   
     return False
     
 #math doent work
 def setKingEchec(king):
-
+    piece_attaquante= isCellTargeted(king.team,getPiecePosition(king),False) 
+    
     for move in king.getAttackMoves():
-        if isMoveRecommendationValid(king, move, getPiecePosition(king)) and isCellTargeted(king.team,getPositionAfterMove(king,move)):
-            print(getPositionAfterMove(king,move))
+        #si le king peut bouger
+      
+        if isMoveRecommendationValid(king, move, getPiecePosition(king)):
+            #si cest une piece
+            if isinstance(isMoveRecommendationValid(king,move,getPiecePosition(king)),pieces.Pieces):
+                if king.team!=isMoveRecommendationValid(king,move,getPiecePosition(king)).team:
+                   
+                   #si la piece nest pas proteger
+                    if not isCellTargeted(king.team,getPositionAfterMove(king,move),True):  
+                        print("peux manger avec roi")  
+                        return False
+                    
+            #si cest une cell               
+            else:
+                #si l'endroit ou le king veut bouger nest pas attaque
+                if isCellTargeted(king.team,getPositionAfterMove(king,move),False)==False:
+                    print("peut bouger")
+                    return False
+                
+    #si la piece attaquante peut etre mangee            
+    for key in chessboard.keys():
+        piece=chessboard[key]
+        if isinstance(piece,pieces.Pieces) and not isinstance(piece,pieces.King):
+            print("eee")
+            if piece.team != getOppositeTeam(king.team):
+                if isMoveValid(piece,key,getPiecePosition(piece_attaquante),False):
+                    print("peut manger")
+                    return False
+   
+   
+         
+    #si la trajectoire de l<attauqe peut etre bloquer                     
+        
 
-            print(isCellTargeted(king.team,getPositionAfterMove(king,move)))
-            return False
-
-
-    gameOver()
+    return True
 
 def checkMath():
     new_chessboard= chessboard
+    
+    
+def getOppositeTeam(team):
+    if team=="white":
+        return "black"
+    else:
+        return "white"
+    
     
 def getPiecePosition(piece):
     for key in chessboard.keys():
@@ -533,6 +599,7 @@ def set_turn(value):
     turn_label.config(text=f"{value}'s turn")
     
 
+
 turn = 0
 turn_label = Label(button_label, text="Turn")
 turn_label.grid(column=3, row=0)
@@ -549,5 +616,3 @@ root.mainloop()
 
 
 #roques, echec, math, en passant
-
-#at the end, landing page, end page.
